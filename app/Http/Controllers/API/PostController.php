@@ -31,7 +31,7 @@ class PostController extends Controller
 
         $post = Post::create($validatedData);
 
-        return response()->json(['data' => $post], 201);
+        return response()->json(['message' => 'Post successfully created', 'data' => $post], 201);
     }
 
     public function update(Request $request, $id)
