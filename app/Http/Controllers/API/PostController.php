@@ -4,13 +4,38 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class PostController extends Controller
 {
-    public function index()
-    {
-        $posts = Post::all();
 
+    
+    public function index(Request $request)
+    {
+        //bonus filtering
+        $author = $request->query('author');
+        $title = $request->query('title');
+        $content = $request->query('content');
+    
+        $query = Post::query();
+    
+        //filters
+        if ($author) {
+            $query->where('author', 'like', '%' . $author . '%');
+        }
+    
+        if ($title) {
+          
+            $query->orWhere('title', 'like', '%' . $title . '%');
+        }
+        if ($content) {
+           
+            $query->orWhere('content', 'like', '%' . $content . '%');
+        }
+    
+        // Fetch posts
+        $posts = $query->get();
+    
         return response()->json(['data' => $posts]);
     }
 
@@ -29,6 +54,7 @@ class PostController extends Controller
             'author' => 'required|string',
         ]);
 
+        $validatedData['published_at'] = Carbon::now();
         $post = Post::create($validatedData);
 
         return response()->json(['message' => 'Post successfully created', 'data' => $post], 201);
@@ -45,7 +71,7 @@ class PostController extends Controller
         $post = Post::findOrFail($id);
         $post->update($validatedData);
 
-        return response()->json(['data' => $post]);
+        return response()->json(['message' => 'Post successfully updated', 'data' => $post], 200);
     }
 
     public function destroy($id)

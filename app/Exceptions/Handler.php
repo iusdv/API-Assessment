@@ -30,7 +30,7 @@ class Handler extends ExceptionHandler
     public function render($request, Throwable $exception)
     {
         if ($exception instanceof NotFoundHttpException) {
-            return redirect('/'); // Redirect to the home page
+            return response()->json(['message' => 'Sorry, this route does not exist.'], 404);
         }
 
         if ($exception instanceof ModelNotFoundException && $exception->getModel() === \App\Models\Post::class) {

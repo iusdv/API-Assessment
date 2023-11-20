@@ -15,14 +15,19 @@ class PostControllerUnitTest extends TestCase
 
     //crud test cases
 
-    public function test_get_posts()
+    public function testGetPosts()
     {
+
         Post::factory()->count(3)->create();
 
-        $postController = new PostController();
-        $response = $postController->index();
 
-        $this->assertCount(3, $response->original['data']);
+        $response = $this->get('/api/posts');
+
+
+        $response->assertStatus(200)
+            ->assertJsonStructure(['data' => []]);
+
+        $this->assertCount(3, $response->json('data'));
     }
 
     public function test_create_posts()
@@ -37,7 +42,16 @@ class PostControllerUnitTest extends TestCase
 
         $response->assertStatus(201)
             ->assertJson(['data' => $postData])
-            ->assertJsonStructure(['data' => ['id', 'title', 'content', 'author', 'created_at', 'updated_at']]);
+            ->assertJsonStructure([
+                'data' => [
+                        'id',
+                        'title',
+                        'content',
+                        'author',
+                        'created_at',
+                        'updated_at',
+                ],
+            ]);
 
 
         $this->assertDatabaseHas('posts', [
@@ -61,8 +75,17 @@ class PostControllerUnitTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson(['data' => $updateData])
-            ->assertJsonStructure(['data' => ['id', 'title', 'content', 'author', 'created_at', 'updated_at']]);
-
+             ->assertJsonStructure([
+                'data' => [
+                        'id',
+                        'title',
+                        'content',
+                        'author',
+                        'published_at',
+                        'created_at',
+                        'updated_at',
+                ],
+            ]);
 
         $this->assertDatabaseHas('posts', [
             'id' => $post->id,
@@ -88,13 +111,13 @@ class PostControllerUnitTest extends TestCase
 
 
 
-//route test cases
+    //route test cases
 
-    public function test_nonexisting_route_302()
+    public function test_nonexisting_route_404()
     {
         $response = $this->get('/nonexistent-route');
 
-        $response->assertStatus(302);
+        $response->assertStatus(404);
     }
 
 
@@ -104,13 +127,13 @@ class PostControllerUnitTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_nonexisting_postID_200()
+    public function test_nonexisting_post_id_200()
     {
         $response = $this->get('/api/home');
         $response->assertStatus(200);
     }
 
-    public function test_nonexisting_post_displays_message()
+    public function test_nonexisting_post_message()
     {
         $nonExistentPostId = -1;
 
@@ -118,5 +141,35 @@ class PostControllerUnitTest extends TestCase
 
         $response->assertStatus(404)
             ->assertJson(['message' => 'This post does not exist.']);
+    }
+
+
+    //testing bonus filter search
+
+    public function testFilterPostsByAuthor()
+    {
+        // test posts with different authors
+        Post::factory()->create(['author' => 'test author 1 ']);
+        Post::factory()->create(['author' => 'test author 2']);
+        Post::factory()->create(['author' => 'Admin']);
+
+
+        $response = $this->get('/api/posts?author=admin');
+
+        // Assert response
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'id',
+                        'title',
+                        'content',
+                        'author',
+                        'published_at',
+                        'created_at',
+                        'updated_at',
+                    ],
+                ],
+            ]);
     }
 }
